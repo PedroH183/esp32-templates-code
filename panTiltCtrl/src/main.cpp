@@ -1,25 +1,49 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
 
-Servo MyServo;
-int pinServo = 18;
+Servo servo_x_machine;
+int servo_x_pin = 18;
 
-const int joystick_x_pin = 12; // tem que ser ADC pins 
+Servo servo_y_machine;
+int servo_y_pin = 19;
+
+int joystick_pin_x   = A0; // GPIO 36
+int joystick_pin_y   = A10; // GPIO 4
+
+int state_y_position = 0;
+int state_x_position = 90;
+
 
 void setup() {
-    // ServoSetup(MyServo, pinServo);
-    MyServo.attach(pinServo);
-    MyServo.write(0);
+    servo_x_machine.attach(servo_x_pin);
+    servo_x_machine.write(state_x_position);
 
-    Serial.begin(115200); // setando o valor de referencia dos bits para comunicação 
+    servo_y_machine.attach(servo_y_pin);
+    servo_y_machine.write(state_y_position);
+    Serial.begin(115200);
 }
 
 void loop() {
-    int x_delta = analogRead(joystick_x_pin); // value between 0 and 1023, this value is a analog read needs convert
-    int x_angle = map(x_delta, 0, 4095, 0, 180); // mapeamento do deslocamento em trechos de 0 - 179 (normalização)
+    int map_volts_x_value = analogRead(joystick_pin_x);
+    int map_volts_y_value = analogRead(joystick_pin_y);
 
-    Serial.println(x_angle);
+    if (map_volts_x_value < 200 && state_x_position < 180){
+        state_x_position++;
+    }
+    if (map_volts_x_value > 3895 && state_x_position > 0){
+        state_x_position--;
+    }
 
-    MyServo.write(x_angle);
-    delay(50);
+    if (map_volts_y_value < 200 && state_y_position < 90){
+        state_y_position++;
+    }
+    if (map_volts_y_value > 3895 && state_y_position > 0){
+        state_y_position--;
+    }
+
+    Serial.printf("X : %d \n", analogRead(joystick_pin_x));
+    Serial.printf("Y : %d \n", analogRead(joystick_pin_y));
+    servo_x_machine.write(state_x_position);
+    servo_y_machine.write(state_y_position);
+    delay(15);
 }
